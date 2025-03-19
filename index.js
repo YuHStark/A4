@@ -1,18 +1,25 @@
-// See https://github.com/dialogflow/dialogflow-fulfillment-nodejs
-// for Dialogflow fulfillment library docs
 'use strict';
- 
-const functions = require('firebase-functions');
-const {WebhookClient} = require('dialogflow-fulfillment');
-const {Card, Suggestion} = require('dialogflow-fulfillment');
- 
+
+const express = require('express');
+const { WebhookClient, Card, Suggestion } = require('dialogflow-fulfillment');
+
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
- 
-exports.handleWebhook = (agent) => {
+
+const app = express();
+app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+
+/**
+ * Fulfillment logic for Dialogflow intents.
+ * This function creates a WebhookClient, defines all intent handlers,
+ * maps intents to their corresponding functions, and then processes the request.
+ */
+function handleWebhook(request, response) {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
- 
+
   // 1. GenreBasedRecommendation Intent Handler
   function genreRecommendationHandler(agent) {
     const genre = agent.parameters.genre;
@@ -81,12 +88,11 @@ exports.handleWebhook = (agent) => {
     responseText += `\nWould you like more information about any of these books?`;
     agent.add(responseText);
   }
-  
+
   // 2. SimilarBookRecommendation Intent Handler
   function similarBookRecommendationHandler(agent) {
     const bookTitle = agent.parameters.book_title;
     
-    // If book title is not provided, ask for it
     if (!bookTitle) {
       agent.add('What book did you enjoy that you want similar recommendations for?');
       return;
@@ -119,12 +125,11 @@ exports.handleWebhook = (agent) => {
     responseText += `\nThese books share similar themes, styles, or settings with "${bookTitle}".`;
     agent.add(responseText);
   }
-  
+
   // 3. BookInformation Intent Handler
   function bookInformationHandler(agent) {
     const bookInfo = agent.parameters.book_info;
     
-    // If book title is not provided, ask for it
     if (!bookInfo) {
       agent.add('What book would you like information about?');
       return;
@@ -173,11 +178,10 @@ exports.handleWebhook = (agent) => {
     responseText += `\nWould you like recommendations for similar books?`;
     agent.add(responseText);
   }
-  
+
   // 4. TopRatedBooks Intent Handler
   function topRatedBooksHandler(agent) {
     const genre = agent.parameters.genre;
-    
     let responseText = '';
     
     if (genre) {
@@ -214,13 +218,12 @@ exports.handleWebhook = (agent) => {
     responseText += `\nThese books have consistently received praise from readers worldwide. Would you like more information about any of them?`;
     agent.add(responseText);
   }
-  
+
   // 5. MultiCriteriaRecommendation Intent Handler
   function multiCriteriaRecommendationHandler(agent) {
     const genre = agent.parameters.genre;
     const length = agent.parameters.length;
     
-    // If no criteria provided, ask for at least one
     if (!genre && !length) {
       agent.add('I can recommend books based on specific criteria. Would you like recommendations based on genre, book length, or both?');
       agent.add(new Suggestion('Genre'));
@@ -229,7 +232,6 @@ exports.handleWebhook = (agent) => {
       return;
     }
     
-    // If genre provided but no length, ask for length
     if (genre && !length) {
       agent.setContext({
         name: 'genre_selected',
@@ -244,7 +246,6 @@ exports.handleWebhook = (agent) => {
       return;
     }
     
-    // If length provided but no genre, ask for genre
     if (length && !genre) {
       agent.setContext({
         name: 'length_selected',
@@ -260,7 +261,6 @@ exports.handleWebhook = (agent) => {
       return;
     }
     
-    // If both criteria provided, give recommendations
     let responseText = `Based on your criteria (genre: ${genre}, length: ${length}), here are some recommendations:\n\n`;
     
     if (genre.toLowerCase().includes('fantasy')) {
@@ -324,12 +324,11 @@ exports.handleWebhook = (agent) => {
     responseText += `\nWould you like more information about any of these books?`;
     agent.add(responseText);
   }
-  
+
   // 6. AuthorBasedRecommendation Intent Handler
   function authorBasedRecommendationHandler(agent) {
     const author = agent.parameters.author;
     
-    // If author not provided, ask for it
     if (!author) {
       agent.add('Which author are you interested in?');
       return;
@@ -372,7 +371,7 @@ exports.handleWebhook = (agent) => {
     responseText += `Would you like recommendations for similar authors?`;
     agent.add(responseText);
   }
-  
+
   // Helper handler for reading level input (follow-up to genre recommendation)
   function readingLevelHandler(agent) {
     const readingLevel = agent.parameters.reading_level;
@@ -395,10 +394,10 @@ exports.handleWebhook = (agent) => {
       }
     });
     
-    // Call genre recommendation handler with the new context
+    // Continue with the genre recommendation
     genreRecommendationHandler(agent);
   }
-  
+
   // Helper handler for length input (follow-up to multi-criteria)
   function lengthInputHandler(agent) {
     const length = agent.parameters.length;
@@ -410,15 +409,13 @@ exports.handleWebhook = (agent) => {
     }
     
     const genre = genreContext.parameters.genre;
-    
-    // Call multi-criteria handler with both parameters
     agent.parameters.genre = genre;
     agent.parameters.length = length;
     multiCriteriaRecommendationHandler(agent);
   }
-  
-  
- let intentMap = new Map();
+
+  // Map intents to handler functions
+  let intentMap = new Map();
   intentMap.set('GenreBasedRecommendationIntent', genreRecommendationHandler);
   intentMap.set('SimilarBookRecommendationIntent', similarBookRecommendationHandler);
   intentMap.set('BookInformationIntent', bookInformationHandler);
@@ -427,6 +424,19 @@ exports.handleWebhook = (agent) => {
   intentMap.set('AuthorBasedRecommendationIntent', authorBasedRecommendationHandler);
   intentMap.set('ReadingLevelInputIntent', readingLevelHandler);
   intentMap.set('LengthInputIntent', lengthInputHandler);
-  
+
   return agent.handleRequest(intentMap);
+}
+
+// Express routes
+app.post('/webhook', (request, response) => {
+  return handleWebhook(request, response);
+});
+
+app.get('/', (req, res) => {
+  res.send('Book Recommendation Chatbot Fulfillment is running!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
