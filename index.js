@@ -22,72 +22,43 @@ function handleWebhook(request, response) {
 
   // 1. GenreBasedRecommendation Intent Handler
   function genreRecommendationHandler(agent) {
-    const genre = agent.parameters.genre;
-    
-    // If genre is not provided, ask for it
-    if (!genre) {
-      agent.add('What genre of books are you interested in? For example, science fiction, fantasy, mystery, etc.');
-      return;
-    }
-    
-    // Check if user has any reading level preference in context
-    const userPrefs = agent.getContext('user_preferences');
-    const readingLevel = userPrefs ? userPrefs.parameters.reading_level : null;
-    
-    // If reading level not provided, ask for it
-    if (!readingLevel) {
-      // Save the genre for later use
-      agent.setContext({
-        name: 'genre_selected',
-        lifespan: 5,
-        parameters: { genre: genre }
-      });
-      
-      agent.add(`Great choice! Do you prefer books that are easy, moderate, or challenging to read?`);
-      agent.add(new Suggestion('Easy'));
-      agent.add(new Suggestion('Moderate'));
-      agent.add(new Suggestion('Challenging'));
-      return;
-    }
-    
-    // If we have both genre and reading level, provide recommendations
-    let responseText = `Based on your interest in ${genre} books with ${readingLevel} reading level, here are my recommendations:\n\n`;
-    
-    if (genre.toLowerCase().includes('science') || genre.toLowerCase().includes('sci-fi')) {
-      responseText += `1. "Dune" by Frank Herbert - The classic epic of a desert planet\n`;
-      responseText += `2. "The Martian" by Andy Weir - An astronaut stranded on Mars\n`;
-      responseText += `3. "Project Hail Mary" by Andy Weir - A man with amnesia on a mission to save Earth\n`;
-    } else if (genre.toLowerCase().includes('fantasy')) {
-      responseText += `1. "The Name of the Wind" by Patrick Rothfuss - A legendary wizard's tale\n`;
-      responseText += `2. "The Way of Kings" by Brandon Sanderson - Epic fantasy with unique magic\n`;
-      responseText += `3. "A Game of Thrones" by George R.R. Martin - Political intrigue in a medieval world\n`;
-    } else if (genre.toLowerCase().includes('mystery') || genre.toLowerCase().includes('thriller')) {
-      responseText += `1. "Gone Girl" by Gillian Flynn - A twisted psychological thriller\n`;
-      responseText += `2. "The Silent Patient" by Alex Michaelides - A psychological mystery\n`;
-      responseText += `3. "The Girl with the Dragon Tattoo" by Stieg Larsson - A murder mystery\n`;
-    } else if (genre.toLowerCase().includes('romance')) {
-      responseText += `1. "Pride and Prejudice" by Jane Austen - A classic romance\n`;
-      responseText += `2. "Outlander" by Diana Gabaldon - Historical romance\n`;
-      responseText += `3. "The Notebook" by Nicholas Sparks - Contemporary romance\n`;
-    } else {
-      responseText += `1. "To Kill a Mockingbird" by Harper Lee - A powerful story of racial injustice\n`;
-      responseText += `2. "The Great Gatsby" by F. Scott Fitzgerald - The American Dream in the 1920s\n`;
-      responseText += `3. "1984" by George Orwell - A dystopian classic about totalitarianism\n`;
-    }
-    
-    // Save user preferences for future use
-    agent.setContext({
-      name: 'user_preferences',
-      lifespan: 50,
-      parameters: {
-        genre: genre,
-        reading_level: readingLevel
-      }
-    });
-    
-    responseText += `\nWould you like more information about any of these books?`;
-    agent.add(responseText);
+  const genre = agent.parameters.genre;
+  
+  if (!genre) {
+    agent.add('What genre of books are you interested in? For example, science fiction, fantasy, mystery, etc.');
+    return;
   }
+  
+  // Provide recommendations directly based on genre
+  let responseText = `Here are some highly rated ${genre} books:\n\n`;
+  
+  if (genre.toLowerCase().includes('science') || genre.toLowerCase().includes('sci-fi')) {
+    responseText += `1. "Dune" by Frank Herbert - The classic epic of a desert planet\n`;
+    responseText += `2. "The Martian" by Andy Weir - An astronaut stranded on Mars\n`;
+    responseText += `3. "Project Hail Mary" by Andy Weir - A man with amnesia on a mission to save Earth\n`;
+  } else if (genre.toLowerCase().includes('fantasy')) {
+    responseText += `1. "The Name of the Wind" by Patrick Rothfuss - A legendary wizard's tale\n`;
+    responseText += `2. "The Way of Kings" by Brandon Sanderson - Epic fantasy with unique magic\n`;
+    responseText += `3. "A Game of Thrones" by George R.R. Martin - Political intrigue in a medieval world\n`;
+  } else if (genre.toLowerCase().includes('mystery') || genre.toLowerCase().includes('thriller')) {
+    responseText += `1. "Gone Girl" by Gillian Flynn - A twisted psychological thriller\n`;
+    responseText += `2. "The Silent Patient" by Alex Michaelides - A psychological mystery\n`;
+    responseText += `3. "The Girl with the Dragon Tattoo" by Stieg Larsson - A murder mystery\n`;
+  } else if (genre.toLowerCase().includes('romance')) {
+    responseText += `1. "Pride and Prejudice" by Jane Austen - A classic romance\n`;
+    responseText += `2. "Outlander" by Diana Gabaldon - Historical romance\n`;
+    responseText += `3. "The Notebook" by Nicholas Sparks - Contemporary romance\n`;
+  } else {
+    responseText += `1. "To Kill a Mockingbird" by Harper Lee - A powerful story of racial injustice\n`;
+    responseText += `2. "The Great Gatsby" by F. Scott Fitzgerald - The American Dream in the 1920s\n`;
+    responseText += `3. "1984" by George Orwell - A dystopian classic about totalitarianism\n`;
+  }
+  
+  // Offer only options we can handle
+  responseText += `\nYou can also ask me about specific books, authors, or get recommendations based on books you've enjoyed.`;
+  agent.add(responseText);
+}
+
 
   // 2. SimilarBookRecommendation Intent Handler
   function similarBookRecommendationHandler(agent) {
@@ -122,7 +93,7 @@ function handleWebhook(request, response) {
       responseText += `3. "The Catcher in the Rye" by J.D. Salinger - A teenage boy's alienation\n`;
     }
     
-    responseText += `\nThese books share similar themes, styles, or settings with "${bookTitle}".`;
+    responseText += `\nI can also recommend books by genre or tell you about specific books.`;
     agent.add(responseText);
   }
 
@@ -175,7 +146,7 @@ function handleWebhook(request, response) {
       responseText += `\nI apologize, but I don't have detailed information about this specific book in my database.\n`;
     }
     
-    responseText += `\nWould you like recommendations for similar books?`;
+    responseText += `\nI can also tell you about other books or recommend books by genre.`;
     agent.add(responseText);
   }
 
@@ -215,7 +186,7 @@ function handleWebhook(request, response) {
       responseText += `3. "The Great Gatsby" by F. Scott Fitzgerald - 4.7/5 (7,200+ ratings)\n`;
     }
     
-    responseText += `\nThese books have consistently received praise from readers worldwide. Would you like more information about any of them?`;
+    responseText += `\nThese books have consistently received praise from readers worldwide. Do you have any other questions?`;
     agent.add(responseText);
   }
 
@@ -321,7 +292,7 @@ function handleWebhook(request, response) {
       }
     }
     
-    responseText += `\nWould you like more information about any of these books?`;
+    responseText += `\nI can also recommend books by author or tell you about specific books.`;
     agent.add(responseText);
   }
 
@@ -368,9 +339,26 @@ function handleWebhook(request, response) {
       responseText += `I have limited information about this author, but these are some of their notable works.\n`;
     }
     
-    responseText += `Would you like recommendations for similar authors?`;
+    responseText += `\nI can also recommend books by genre or tell you about specific books.`;
     agent.add(responseText);
   }
+
+  function goodbyeHandler(agent) {
+  agent.add("It was my pleasure to help you find good books to read! If you need more recommendations in the future, just ask. Happy reading!");
+}
+
+  // 3. Add a fallback handler with suggestions to guide the conversation
+  function fallbackHandler(agent) {
+    agent.add("I'm not sure I understand. I can help you with book recommendations by genre, author, or similarity to books you've enjoyed. You can also ask me about specific books or top-rated books. What would you like to know?");
+    agent.add(new Suggestion('Recommend fantasy books'));
+    agent.add(new Suggestion('Books similar to Harry Potter'));
+    agent.add(new Suggestion('Information about 1984'));
+    agent.add(new Suggestion('Top-rated mystery novels'));
+  }
+  
+  intentMap.set('Goodbye', goodbyeHandler);
+  intentMap.set('Default Fallback Intent', fallbackHandler);
+
 
   // Helper handler for reading level input (follow-up to genre recommendation)
   function readingLevelHandler(agent) {
@@ -413,6 +401,7 @@ function handleWebhook(request, response) {
     agent.parameters.length = length;
     multiCriteriaRecommendationHandler(agent);
   }
+  
 
   // Map intents to handler functions
   let intentMap = new Map();
