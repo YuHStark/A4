@@ -8,7 +8,7 @@ const {Card, Suggestion} = require('dialogflow-fulfillment');
  
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
  
-exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+exports.handleWebhook = (agent) => {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
@@ -417,8 +417,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     multiCriteriaRecommendationHandler(agent);
   }
   
-  // Mapping intents to handlers
-  let intentMap = new Map();
+  
+ let intentMap = new Map();
   intentMap.set('GenreBasedRecommendationIntent', genreRecommendationHandler);
   intentMap.set('SimilarBookRecommendationIntent', similarBookRecommendationHandler);
   intentMap.set('BookInformationIntent', bookInformationHandler);
@@ -428,5 +428,5 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   intentMap.set('ReadingLevelInputIntent', readingLevelHandler);
   intentMap.set('LengthInputIntent', lengthInputHandler);
   
-  agent.handleRequest(intentMap);
+  return agent.handleRequest(intentMap);
 });
